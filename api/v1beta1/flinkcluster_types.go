@@ -41,7 +41,7 @@ const (
 	ComponentStateDeleted  = "Deleted"
 )
 
-// JobState defines states for a Flink job.
+// JobState defines states for a Flink job deployment.
 const (
 	JobStatePending   = "Pending"
 	JobStateRunning   = "Running"
@@ -49,7 +49,9 @@ const (
 	JobStateSucceeded = "Succeeded"
 	JobStateFailed    = "Failed"
 	JobStateCancelled = "Cancelled"
+	JobStateSuspended = "Suspended"
 	JobStateUnknown   = "Unknown"
+	JobStateLost      = "Lost"
 )
 
 // AccessScope defines the access scope of JobManager service.
@@ -203,6 +205,8 @@ type JobManagerSpec struct {
 	// Volume mounts in the JobManager container.
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
+
 	// Init containers of the Job Manager pod.
 	InitContainers []corev1.Container `json:"initContainers,omitempty"`
 
@@ -219,13 +223,13 @@ type JobManagerSpec struct {
 	// pod.
 	Sidecars []corev1.Container `json:"sidecars,omitempty"`
 
-	// JobManager Deployment pod template annotations.
+	// JobManager StatefulSet pod template annotations.
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
 	// SecurityContext of the JM pod.
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 
-	// JobManager Deployment pod template labels.
+	// JobManager StatefulSet pod template labels.
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 }
 
@@ -276,6 +280,8 @@ type TaskManagerSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/storage/volumes/
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
+
 	// Init containers of the Task Manager pod.
 	InitContainers []corev1.Container `json:"initContainers,omitempty"`
 
@@ -292,13 +298,13 @@ type TaskManagerSpec struct {
 	// pod.
 	Sidecars []corev1.Container `json:"sidecars,omitempty"`
 
-	// TaskManager Deployment pod template annotations.
+	// TaskManager StatefulSet pod template annotations.
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
 	// SecurityContext of the TM pod.
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 
-	// TaskManager Deployment pod template labels.
+	// TaskManager StatefulSet pod template labels.
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 }
 
@@ -500,8 +506,8 @@ type FlinkClusterComponentsStatus struct {
 	// The state of configMap.
 	ConfigMap FlinkClusterComponentState `json:"configMap"`
 
-	// The state of JobManager deployment.
-	JobManagerDeployment FlinkClusterComponentState `json:"jobManagerDeployment"`
+	// The state of JobManager StatefulSet.
+	JobManagerStatefulSet FlinkClusterComponentState `json:"jobManagerStatefulSet"`
 
 	// The state of JobManager service.
 	JobManagerService JobManagerServiceStatus `json:"jobManagerService"`
@@ -509,8 +515,8 @@ type FlinkClusterComponentsStatus struct {
 	// The state of JobManager ingress.
 	JobManagerIngress *JobManagerIngressStatus `json:"jobManagerIngress,omitempty"`
 
-	// The state of TaskManager deployment.
-	TaskManagerDeployment FlinkClusterComponentState `json:"taskManagerDeployment"`
+	// The state of TaskManager StatefulSet.
+	TaskManagerStatefulSet FlinkClusterComponentState `json:"taskManagerStatefulSet"`
 
 	// The status of the job, available only when JobSpec is provided.
 	Job *JobStatus `json:"job,omitempty"`
@@ -537,10 +543,10 @@ type FlinkClusterControlStatus struct {
 // JobStatus defines the status of a job.
 type JobStatus struct {
 	// The name of the Kubernetes job resource.
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 
 	// The ID of the Flink job.
-	ID string `json:"id"`
+	ID string `json:"id,omitempty"`
 
 	// The state of the Kubernetes job.
 	State string `json:"state"`
